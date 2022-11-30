@@ -13,3 +13,7 @@ plotly~=4.9.0
 nltk~=3.5
 numpy==1.23.5
 scikit-learn==1.1.3
+huggingface-hub==0.7.0
+sentence-transformers==2.2.0
+sentencepiece==0.1.96
+python-dotenv
