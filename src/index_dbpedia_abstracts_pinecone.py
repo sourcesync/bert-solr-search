@@ -113,26 +113,38 @@ def upsert(idx, vecs, toks, sparses):
         print("PINECONE URL", pinecone_url)
         return  # DEBUG=True is essentially a dry-run
 
-    # perform the POST call
-    start_t = time.time()
-    res = None
-    try:
-        r = requests.post(\
-            url=pinecone_url,\
-            headers=headers,\
-            data=json_post_data,\
-            timeout=None)
-        res = str(r.status_code) + " - " + r.text
-        if (r.status_code!=200):
-            print("ERR: web service call returned", r.status_code)
-    except:
-        traceback.print_exc()
-        res = "exception"
-        print("ERR: web service call generated exception:", res)
-    end_t = time.time()
+    # perform the POST call with timeout and retries...
+    tries = 0
+    while True:
+        start_t = time.time()
+        res = None
+        try:
+            tries += 1
+            #print("start")
+            r = requests.post(\
+                url=pinecone_url,\
+                headers=headers,\
+                data=json_post_data,\
+                timeout=5)
+            #print("end")
+            end_t = time.time()
+            res = str(r.status_code) + " - " + r.text
+            if (r.status_code!=200):
+                print("ERR: web service call returned", r.status_code)
+            break
+        except:
+            end_t = time.time()
+            traceback.print_exc()
+            res = "exception"
+            print("ERR: web service call generated exception:", res)
+            if tries<10:
+                print("Retrying (%d)" % tries)
+                continue
+            else:
+                break
     
     # create a results object for this function
-    result = {'idx':idx, 'result':res, 'timing': end_t - start_t, 'pack':PACK }
+    result = {'idx':idx, 'result':res, 'timing': end_t - start_t, 'pack':PACK, 'tries':tries }
     print(result)
 
     # append to global results list and write all to a CSV
